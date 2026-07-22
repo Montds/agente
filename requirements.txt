@@ -1,0 +1,7 @@
+pyttsx3
+pandas
+typing
+pydantic
+deepgram-sdk==7.5.0
+sqlalchemy
+psycopg2-binary

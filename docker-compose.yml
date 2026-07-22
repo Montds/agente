@@ -1,0 +1,12 @@
+services:
+  postgres_db:
+    build: .
+    container_name: postgres_sistema_empresa
+
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: "12345678"
+      POSTGRES_DB: bd_sistema_empresa
+
+    ports:
+      - "5432:5432"

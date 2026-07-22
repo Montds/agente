@@ -1,0 +1,9 @@
+{
+  "lead_id": "5",
+  "call_state": "CONTESTADA",
+  "lead_classification": "HOT_LEAD",
+  "lead_interest_level": "ALTO",
+  "classification_reason": "Dijo que estaba completamente interesado",
+  "recommended_next_action": "LLamar de inmediato",
+  "observations": {}
+}
