@@ -1,0 +1,25 @@
+{
+  "lead_id": "13",
+  "call_id": "3",
+  "call_state": "CONTESTADA",
+  "lead_classification": "HOT_LEAD",
+  "lead_interest_level": "ALTO",
+  "classification_reason": "El contacto indicó explícitamente que sí está interesado en los productos ofrecidos.",
+  "recommended_next_action": "Agendar seguimiento comercial con el contacto",
+  "observations": {
+    "company_name": "Supercomputadorascuanticas",
+    "contact_name": "Edwin Montilla",
+    "industry": "Tecnología",
+    "user_text_response": "Estoy muy interesado",
+    "transcript": [
+      {
+        "role": "assistant",
+        "content": "Buenos días, ¿es usted el señor Edwin Montilla? Le llamo de parte de Supercomputadorascuanticas para consultar si está interesado en nuestros productos del sector Tecnología."
+      },
+      {
+        "role": "user",
+        "content": "Estoy muy interesado"
+      }
+    ]
+  }
+}

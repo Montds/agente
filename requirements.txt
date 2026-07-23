@@ -1,7 +1,6 @@
-pyttsx3
-pandas
-typing
-pydantic
+pydantic==2.13.4
+sqlalchemy==2.0.51
+PyAudio==0.2.14
 deepgram-sdk==7.5.0
-sqlalchemy
-psycopg2-binary
+psycopg2-binary==2.9.12
+python-dotenv==1.1.1

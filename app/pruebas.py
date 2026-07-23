@@ -1,4 +1,7 @@
-if __name__ == "__main__":
-    nombre:str ="pepe"
-    print(len(nombre))
-    print(nombre.isspace())
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+API_KEY = os.getenv("API_KEY")
+print(API_KEY)

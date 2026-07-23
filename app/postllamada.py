@@ -119,57 +119,29 @@ def initialize_database():
 # ==========================================
 
 def load_data(file_path: str) -> dict:
-    """Loads the JSON file and unescapes 'observations' if it comes in as a string."""
+    """se carga el archivo json que esta en la ruta file_path"""
     with open(file_path, "r", encoding="utf-8") as file:
         data = json.load(file)
-
-    if "observations" in data and isinstance(data["observations"], str):
-        try:
-            data["observations"] = json.loads(data["observations"])
-        except json.JSONDecodeError as e:
-            raise ValueError(f"The 'observations' field in the file contains malformed JSON: {e}")
-
     return data
 
-
 def validate_data(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Uppercases enum-like fields and validates types with Pydantic."""
+    """se validan los datos para que cumplan el formato correcto"""
     if not isinstance(data, dict):
         raise ValueError("The 'data' parameter must be a valid dictionary.")
-
-    # 1. Normalize lowercase to UPPERCASE for enum-like fields
     enum_fields = ["call_state", "lead_classification", "lead_interest_level"]
     for field in enum_fields:
         if isinstance(data.get(field), str):
             data[field] = data[field].strip().upper()
-
-    # 2. Parse observations if it is still a JSON string
-    raw_observations = data.get("observations")
-    if isinstance(raw_observations, str):
-        try:
-            data["observations"] = json.loads(raw_observations)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"The 'observations' field contains malformed JSON: {e}")
-
-    # 3. Validate with Pydantic
+    #se crea una instancia de AgentPredictionSchema usando los datos del json
     try:
         validated_obj = AgentPredictionSchema(**data)
         return validated_obj.model_dump()
     except ValidationError as ve:
         raise ValueError(f"Pydantic validation error: {ve.errors()}")
 
-
 def determine_new_lead_status(classification: str) -> str:
-    """Maps the LLM classification to the lead statuses used in the DB.
-
-    NOTE: status VALUES are kept in Spanish ('pendiente', 'no_interesado',
-    'llamar_despues') because that's what's already stored in the `leads`
-    table (see DEFAULT 'pendiente' and the seed INSERTs). Only the code
-    identifiers were translated to English.
-    """
+    """" se asigna el estado del lead tomando en cuenta la clasificacion del lead """
     normalized = classification.strip().upper()
-
-
     if normalized in [ "COLD_LEAD"]:
         return "no_interesado"
     elif normalized in ["NOT_QUALIFIED", "NO_CONTACTADO" , "CALLBACK_REQUESTED", "RESPUESTA_AMBIGUA"]:
@@ -177,51 +149,21 @@ def determine_new_lead_status(classification: str) -> str:
     elif normalized in ["HOT_LEAD", "WARM_LEAD"]:
         return "interesado"
 
-    return "pendiente"
-
-
 def register_call_result(validated_data: Dict[str, Any]) -> dict:
+    """se guarda el resultado en la tabla agent_predicitons"""
     session = SessionLocal()
     try:
         lead_id = validated_data["lead_id"]
-
-        # 1. Check that the Lead exists
         lead = session.query(Lead).filter(Lead.id == lead_id).first()
-        if not lead:
-            return {
-                "status": "error",
-                "code": "NOT_FOUND",
-                "details": f"Lead with ID '{lead_id}' does not exist in the database."
-            }
-
-        # 2. Resolve the Call row: reuse an existing one or create a new one
         call_id = validated_data.get("call_id")
-        if call_id:
-            call = session.query(Call).filter(Call.id == call_id, Call.lead_id == lead_id).first()
-            if not call:
-                return {
-                    "status": "error",
-                    "code": "NOT_FOUND",
-                    "details": f"Call with ID '{call_id}' does not exist for lead '{lead_id}'."
-                }
-        else:
-            call = Call(
-                lead_id=lead_id,
-                call_status=validated_data["call_state"],
-                durations_seconds=validated_data.get("duration_seconds", 0) or 0,
-            )
-            session.add(call)
-            session.flush()  # populates call.id before we use it below
-
-        # 3. Compute new lead status and increment attempts
+        # se asigna el nuevo estado del lead
         new_status = determine_new_lead_status(validated_data["lead_classification"])
         lead.status = new_status
         lead.attempts_counts_today += 1
-
-        # 4. Insert the prediction record
+        # se inserta el resultado de la prediccion del agente en la tabla "agents_predictions
         new_prediction = AgentPrediction(
             lead_id=lead_id,
-            call_id=call.id,
+            call_id=call_id,
             call_state=validated_data["call_state"],
             lead_classification=validated_data["lead_classification"],
             lead_interest_level=validated_data["lead_interest_level"],
@@ -230,56 +172,43 @@ def register_call_result(validated_data: Dict[str, Any]) -> dict:
             observations=validated_data.get("observations"),  # stored directly as JSONB
         )
         session.add(new_prediction)
-
-        # 5. Commit the whole transaction
+        #se confirman todos los cambios hechos
         session.commit()
-
-        # 6. Optional sales alert
-        if validated_data["lead_interest_level"] == "ALTO" or validated_data["lead_classification"] in ["HOT_LEAD", "HOT"]:
-            print("ALERTA IMPORTANTE CLIENTE QUE QUIERE COMPRAR DETECTADO")
-
-
+        is_hot_lead  = validated_data["lead_classification"] in ["HOT_LEAD", "HOT"]
         return {
             "status": "success",
             "message": "Result registered successfully.",
             "lead_id": lead_id,
-            "call_id": call.id,
-            "new_lead_status": new_status
+            "call_id": call_id,
+            "new_lead_status": new_status,
+            "is_hot_lead": is_hot_lead
         }
-
     except Exception as e:
-        session.rollback()  # Rolls back the transaction if anything fails
+        session.rollback()
         return {
             "status": "error",
             "code": "INTERNAL_SERVER_ERROR",
             "details": f"Unexpected database error: {str(e)}",
         }
     finally:
-        session.close()  # Releases the session connection
+        session.close()
 
-
-
-
-def alert_personal():
-    print("se ha detectado un cliente con mucho potencial")
-    print("iniciar notificacion a operador")
-
-# ==========================================
-# 6. MAIN EXECUTION
-# ==========================================
-
+def trigger_hot_lead_alert(result: dict) -> None:
+    """se alerta si es un un hot lead"""
+    if result["status"] == "success":
+        if result["is_hot_lead"]:
+            print("==========================IMPORTANT ALERT: HOT LEAD DETECTADO==========================")
 if __name__ == "__main__":
-    # Create tables if they don't exist yet
-    #initialize_database()
-
+    print("asignando ruta del json de resultados")
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(BASE_DIR, "resultado_llamada.json")
-    # 1. Load and validate
+    json_path = os.path.join(BASE_DIR, "jsons/resultado_llamada.json")
+    print("cargando el json")
     raw_data = load_data(json_path)
+    print("validando datos del json")
     validated_data = validate_data(raw_data)
-    print("Validation completed successfully.")
-
-    # 2. Persist through the ORM
-    #response = register_call_result(validated_data)
-    #print("Server response:")
-    #print(json.dumps(response, indent=2, ensure_ascii=False))
+    print("insertando el resultado en la base de datos")
+    response = register_call_result(validated_data)
+    print("Server response:")
+    print(json.dumps(response, indent=2, ensure_ascii=False))
+    #se lanza la alerta si es un cliente potencial
+    trigger_hot_lead_alert(response)

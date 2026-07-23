@@ -1,0 +1,10 @@
+{
+  "lead_id": "13",
+  "call_id": "3",
+  "call_state": "CONTESTADA",
+  "lead_classification": "HOT_LEAD",
+  "lead_interest_level": "ALTO",
+  "classification_reason": "El contacto indicó explícitamente que sí está interesado en los productos ofrecidos.",
+  "recommended_next_action": "Agendar seguimiento comercial con el contacto",
+  "observations": {}
+}

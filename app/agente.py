@@ -1,9 +1,8 @@
-# works fine now
-API_KEY = "100c8f0c1dc5b67852b9f92ac5175ffcc06261eb"
 
 import enum
 import json
 import os
+import random
 import re
 import sys
 import threading
@@ -22,22 +21,51 @@ from deepgram.types.speak_settings_v1 import SpeakSettingsV1
 from deepgram.types.speak_settings_v1provider import SpeakSettingsV1Provider_Deepgram
 from deepgram.core.events import EventType
 
+
+
+from pathlib import Path
+from dotenv import load_dotenv
+
+# verifiacion de la api key
+
+env_path = Path('.env')
+
+
+load_dotenv()
+
+#verificar que la api que el directorio .venv existe
+if not env_path.exists():
+    raise FileNotFoundError("The .env file containing the environment variables was not found")
+
+load_dotenv(env_path)
+
+API_KEY = os.getenv("API_KEY")
+
+#verificar que la api key exista
+if not API_KEY:
+    raise ValueError("The API_KEY variable is not defined in the .env file")
+
+print("API_KEY loaded successfully")
+#####
+
 OUTPUT_SAMPLE_RATE = 24000  # typical sample rate for aura-2 voices
 
 # ---------------------------------------------------------------------------
 # LEAD DATA (this can later be parameterized / read from a CRM, etc.)
 # ---------------------------------------------------------------------------
-LEAD_ID = "1"
+# LEAD_ID and CALL_ID are now random integers in [1, 15], as requested.
+# They're generated once per script run and used consistently below.
+LEAD_ID = str(random.randint(1, 15))
+CALL_ID = str(random.randint(1, 15))
+
 COMPANY_NAME = "Supercomputadorascuanticas"
 CONTACT_NAME = "Edwin Montilla"
 INDUSTRY = "Tecnología"
 
 # Project base folder (where this script lives) -> the JSON is saved here.
-# NOTE: this project does not use a "calls" table/entity, so the output
-# JSON below has no call_id field at all — the prediction is meant to be
-# linked directly to the lead.
+# The output JSON now includes both lead_id and call_id.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_JSON_PATH = os.path.join(BASE_DIR, f"call_result_{LEAD_ID}.json")
+OUTPUT_JSON_PATH = os.path.join(BASE_DIR, f"jsons/call_result_{LEAD_ID}_{CALL_ID}.json")
 
 # Spoken text: kept in Spanish on purpose, since the agent talks to a
 # Spanish-speaking lead and must introduce itself in Spanish.
@@ -203,10 +231,10 @@ def build_settings():
 
 def save_result():
     """Builds and saves the final JSON with the call result, following the
-    lead_id / call_state / lead_classification / lead_interest_level /
+    lead_id / call_id / call_state / lead_classification / lead_interest_level /
     classification_reason / recommended_next_action / observations format.
-    There is no call_id field: this project links the prediction directly
-    to the lead and does not use a separate 'calls' entity."""
+    Both lead_id and call_id are random integers assigned at the start of
+    this run (see LEAD_ID / CALL_ID above)."""
 
     if lead_classification == LeadClassification.HOT_LEAD:
         interest_level = LeadInterestLevel.HIGH
@@ -235,6 +263,7 @@ def save_result():
 
     result_payload = {
         "lead_id": LEAD_ID,
+        "call_id": CALL_ID,
         "call_state": CallState.ANSWERED,
         "lead_classification": final_classification,
         "lead_interest_level": interest_level,
@@ -278,6 +307,7 @@ def main():
         output=True
     )
 
+    print(f"Lead ID: {LEAD_ID} | Call ID: {CALL_ID}")
     print("Connecting to the Agent...")
 
     try:

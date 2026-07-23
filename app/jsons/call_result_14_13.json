@@ -1,8 +1,9 @@
 {
-  "lead_id": "001",
+  "lead_id": "14",
+  "call_id": "13",
   "call_state": "CONTESTADA",
-  "lead_classification": "HOT_LEAD",
-  "lead_interest_level": "ALTO",
+  "lead_classification": "RESPUESTA_AMBIGUA",
+  "lead_interest_level": "NULO",
   "classification_reason": "La llamada finalizó sin una respuesta clara de interés por parte del contacto.",
   "recommended_next_action": "Reintentar el contacto en otro momento con una pregunta más directa",
   "observations": {
@@ -17,23 +18,27 @@
       },
       {
         "role": "user",
-        "content": "Me encantarías"
-      },
-      {
-        "role": "user",
-        "content": "adquirir sus productos."
+        "content": "Me encantaría."
       },
       {
         "role": "assistant",
-        "content": "¡Perfecto!"
-      },
-      {
-        "role": "assistant",
-        "content": "Muchas gracias por su interés."
+        "content": "¡Muchas gracias!"
       },
       {
         "role": "assistant",
         "content": "Que tenga un excelente día."
+      },
+      {
+        "role": "user",
+        "content": "Funciona a la perfección."
+      },
+      {
+        "role": "assistant",
+        "content": "¡Agradezco su respuesta!"
+      },
+      {
+        "role": "assistant",
+        "content": "Que tenga un buen día."
       }
     ]
   }
