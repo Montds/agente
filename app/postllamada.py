@@ -13,8 +13,8 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 Base = declarative_base()
 
 # ==========================================
-# 1. SQLALCHEMY TABLES (ORM)
-#    Matches the real DB schema: leads, calls, agent_predictions
+# 1.  TABLAS SQLALCHEMY (ORM)
+#     tablas de la base de datos: leads, calls, agent_predictions
 # ==========================================
 
 class Lead(Base):
@@ -27,14 +27,12 @@ class Lead(Base):
     region = Column(String(100), nullable=True)
     industry = Column(String(100), nullable=True)
     notes = Column(Text, nullable=True)
-    # NOTE: column is spelled "prefered_language" (single "r") in the DB,
-    # kept identical here so the ORM maps correctly.
     prefered_language = Column(String(10), default="es")
     created_at = Column(DateTime, default=datetime.utcnow)
     status = Column(String(50), default="pendiente")
     attempts_counts_today = Column(Integer, default=0)
 
-    # One-to-many relationships
+    #relaciones con las tablas Call y agent_predictions
     calls = relationship("Call", back_populates="lead", cascade="all, delete-orphan")
     predictions = relationship("AgentPrediction", back_populates="lead", cascade="all, delete-orphan")
 
@@ -71,13 +69,12 @@ class AgentPrediction(Base):
 
 
 # ==========================================
-# 2. PYDANTIC SCHEMAS (VALIDATION DTOs)
+# 2. PYDANTIC SCHEMAS para validar los tipos de datos
 # ==========================================
 
 class Message(BaseModel):
     role: str
     content: str
-
 
 class ObservationsSchema(BaseModel):
     company_name: Optional[str] = None
@@ -85,7 +82,6 @@ class ObservationsSchema(BaseModel):
     industry: Optional[str] = None
     user_text_response: Optional[str] = None
     transcript: List[Message] = Field(default_factory=list)
-
 
 class AgentPredictionSchema(BaseModel):
     lead_id: str
@@ -96,11 +92,12 @@ class AgentPredictionSchema(BaseModel):
     classification_reason: str
     recommended_next_action: str
     observations: ObservationsSchema
-    duration_seconds: Optional[int] = 0  # only used if a new Call row needs to be created
+
+    duration_seconds: Optional[int] = 0  # esta la usaba era en la primera version del codigo, ya la podria quitar
 
 
 # ==========================================
-# 3. DATABASE CONFIGURATION
+# 3. configuracion de la base de datos
 # ==========================================
 
 DATABASE_URL = "postgresql://root:12345678@localhost:5432/bd_sistema_empresa"
@@ -109,8 +106,9 @@ engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+#este ya no la uso lo podria quitar
 def initialize_database():
-    """Creates the tables in PostgreSQL if they don't already exist."""
+    """crea la base de datos si no existe, esta lo usaba era la primera version del codigo"""
     Base.metadata.create_all(bind=engine)
 
 
@@ -198,6 +196,7 @@ def trigger_hot_lead_alert(result: dict) -> None:
     if result["status"] == "success":
         if result["is_hot_lead"]:
             print("==========================IMPORTANT ALERT: HOT LEAD DETECTADO==========================")
+
 if __name__ == "__main__":
     print("asignando ruta del json de resultados")
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))

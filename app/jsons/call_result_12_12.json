@@ -1,0 +1,33 @@
+{
+  "lead_id": "12",
+  "call_id": "12",
+  "call_state": "CONTESTADA",
+  "lead_classification": "RESPUESTA_AMBIGUA",
+  "lead_interest_level": "NULO",
+  "classification_reason": "La llamada finalizó sin una respuesta clara de interés por parte del contacto.",
+  "recommended_next_action": "Reintentar el contacto en otro momento con una pregunta más directa",
+  "observations": {
+    "company_name": "Supercomputadorascuanticas",
+    "contact_name": "Edwin Montilla",
+    "industry": "Tecnología",
+    "user_text_response": "",
+    "transcript": [
+      {
+        "role": "assistant",
+        "content": "Buenos días, ¿es usted el señor Edwin Montilla? Le llamo de parte de Supercomputadorascuanticas para consultar si está interesado en nuestros productos del sector Tecnología."
+      },
+      {
+        "role": "user",
+        "content": "Yo pienso que sería una buena idea."
+      },
+      {
+        "role": "assistant",
+        "content": "¡Muchas gracias!"
+      },
+      {
+        "role": "assistant",
+        "content": "Que tenga un buen día."
+      }
+    ]
+  }
+}
